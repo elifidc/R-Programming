@@ -1,0 +1,424 @@
+
+---
+PROBLEM ONE 
+Education of 70 --> predicted crime rate of 53.163
+Education of 35 --> predicted crime rate of 1.153
+
+
+For an education level of 70, we predicted a crime rate of 53.163. This prediction appears to look trustworthy, and does not appear
+to be an outlier on the graph, or fall in any extreme ranges. On the other hand, for an education level of 35, we predicted a crime rate of 1.153. 
+I took a look at the data before plotting, and getting the number 1.153 was the first indicator that the results may not be trustworthy. 
+The number 1.153 falls at the very beginning of the scale, with most points for crime being on the other end of the graph. It is probably
+unlikely in real-world application to find an area with a crime rate that low, relative to the rest of the data provided. Additionally, the education level the model 
+predicted this crime rate for, fall out of range of the data points we have access to. While the model's prediction/calculations for this number are correct, extrapolation 
+may not be the most insightful method.
+```{r}
+#1
+fl_crime <- read.csv("~/Desktop/fl_crime.csv")
+crime_rate <- fl_crime$crime.rate..per.1000.
+education <- fl_crime$education....
+head(fl_crime)
+
+plot(education, crime_rate)
+linmod <- lm(crime_rate ~ education, data = fl_crime)
+cor(fl_crime$education, fl_crime$crime.rate..per.1000.)
+
+```
+
+
+The correlation returned a value of 0.77. This number being greater than 0 confirms a positive relationship between the variables, meaning as one goes up, so does the other. The value being relatively close to 1 also indicates a strong positive relationship, with points relatively close to one another.
+When the data is plotted, you can see a very clustered set of data points, with a couple extreme outliers. The points appear to have a relatively strong positive linear relationship. 
+
+
+
+The linear model returned an intercept of 1292551, and a slope of 8189. This means that for every one unit increase in GDP, we expect a 1292551 unit increase in broadband subscribers. The intercept of 1292551 is where the line will cross the y-axis. This means that for a country/territory with zero GDP, we expect 1292551 broadband subscribers. This is a case where extrapolation may not be the best form of analysis. For starters, a country with a GDP of zero, or even close, is unlikely, making it hard for the model to predict corresponding broadband subscribers. If you look at the given GDP values for the dataset, the lowest numbers are in the hundreds. While the models calculation of the intercept is correct, it is not very useful or insightful for our analyses.
+
+For the plot of subscribers against GDP, there appears to be one extreme outlier, with a broadband subscriber significantly above the rest of the points on the plot.
+```{r}
+
+
+#broadband(hat) = 1292551 + 8189(GDP(hat))
+
+
+d.set <- read.csv("~/Downloads/Broadband_data.csv")
+
+d.set$GDP
+
+correlation <- cor(d.set$GDP, d.set$Broadband)
+correlation
+plot(d.set$GDP, d.set$Broadband)
+abline(lm(Broadband ~ GDP, data = d.set), col = "red")
+
+original_lm <- lm(Broadband ~ GDP, data = d.set)
+
+#I used ChatGPT for the following two lines of code, to find the corresponding country without manually searching.
+
+max_broadband_country <- d.set$Country[which.max(d.set$Broadband)]
+
+print(max_broadband_country)
+
+#REMOVING OUTLIERS
+
+#without_outlier <- d.set[d.set$Country != d.set$Country[which.max(d.set$Broadband)], ]
+
+without_outlier <- d.set[d.set$Country != max_broadband_country, ]
+
+
+
+#CALCULATION WITHOUT OUTLIER
+
+new_correlation <- cor(without_outlier$GDP, without_outlier$Broadband)
+new_correlation
+
+new_lm <- lm(Broadband ~ GDP, data = without_outlier)
+
+new_plot <- plot(without_outlier$GDP, without_outlier$Broadband)
+abline(lm(Broadband ~ GDP, data = without_outlier), col = "red")
+
+original_lm
+new_lm
+correlation
+new_correlation
+
+
+
+#Regression Lines with and without Outlier"
+plot(d.set$GDP,d.set$Broadband, main = "Regression Lines with and without Outlier", pch = 19, col = "black")
+abline(lm(Broadband ~ GDP, data = without_outlier), col = "red")
+abline(lm(Broadband ~ GDP, data = d.set), col = "blue")
+
+```
+The new correlation for the data without outliers is 0.980, compared to the old correlation of 0.77. While the 0.77 showed us a moderately strong positive relationship, a correlation of 0.980 is significantly stronger because of how close it is to 1. The change in correlation showed us that the outlier was in fact skewing the original numbers, and causing the relationship to look less strong than it actually is. 
+The new linear regression takes the y-intercept as 2352985. After removing the outlier, it appears as though the intercept went further up the y axis, shifting the line up. After plotting both lines on the same plot, you can see that removing the outlier pulled the line down overall. This means the outlier had a lot of pull on the regression line, as the line shifted to try and get the best fit with the outlier involved. While removing the outlier might clean up the data a bit, the country being removed is China, a global giant. This data does not appear to be a data entry error, or miscalculation. It appears to be real data that could reflect important demographic or economic trends. Additionally, the country in question has a huge population, which explains the broadband subscriber count being so high.
+
+
+
+
+PROBLEM 3
+```{r}
+fl_crime <- read.csv("~/Desktop/fl_crime.csv")
+library(ggplot2) 
+fl_crime[fl_crime == ""] <- NA
+
+crime_rate <- fl_crime$crime.rate..per.1000.
+education <- fl_crime$education....
+
+
+fl_crime$urb_group <- cut(fl_crime$urbanization,  
+                          breaks = c(-1, 33, 66, 100),
+                          labels = c("Rural", "Suburban", "Urban"))
+
+
+subset_rural <- fl_crime[fl_crime$urb_group == "≤ 33", ]
+subset_suburban <- fl_crime[fl_crime$urb_group == "(34, 66]", ]
+subset_urban <- fl_crime[fl_crime$urb_group == "(66, 100]", ]
+
+ggplot(fl_crime, aes(x = education, y = crime_rate)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ urb_group)
+
+#Had trouble debugging my ggplot() code. Asked chatGPT to help me and it told me to correct how I cut the urbanization group.
+
+
+
+
+
+#Ignore code below, all my failed attempts I want to keep track of for future reference
+#ggplot(fl_crime[fl_crime$urb_group == "Rural", ], aes(x = education, y = crime_rate)) +
+ # geom_point() +  
+ # geom_smooth(method = "lm")
+
+#if (nrow(subset_rural) > 0) {
+ # plot(subset_rural$education, subset_rural$crime_rate)}
+
+#plot(subset_rural$education, subset_rural$crime_rate)
+#abline(lm(crime_rate ~ education, data = subset_rural))
+#correlation_rural <- cor(subset_rural$education, subset_rural$crime_rate)
+
+
+
+
+
+#CORRELATIONS 
+
+correlation_rural <- cor(fl_crime$education[fl_crime$urb_group == "Rural"], 
+                          fl_crime$crime.rate..per.1000.[fl_crime$urb_group == "Rural"])
+
+correlation_suburban <- cor(fl_crime$education[fl_crime$urb_group == "Suburban"],
+                            fl_crime$crime.rate..per.1000.[fl_crime$urb_group == "Suburban"])
+
+correlation_urban <- cor(fl_crime$education[fl_crime$urb_group == "Urban"],
+                            fl_crime$crime.rate..per.1000.[fl_crime$urb_group == "Urban"])
+
+original_correlation <- cor(fl_crime$education, fl_crime$crime.rate..per.1000.)
+
+
+original_correlation
+correlation_rural
+correlation_suburban
+correlation_urban
+
+
+
+```
+
+[Rural] 0.1740292
+[Suburban] -0.4078237
+[Urban] -0.1222998
+
+Originally, without conditioning on urbanization, the correlation was 0.467. After conditioning for urbanization, we see that for rural, 
+the direction stayed the same, but the strength weakened, at 0.174. For suburban areas, the direction changed, and the relationship is now 
+negative and moderate, at -0.408. For urban areas, the relationship changed direction, but is not as strong as suburban or the original, at -0.122. 
+This means that very generally speaking, crime rate does not necesarily go up as the education does. For rural areas, the relationship looks very weak and positive. 
+For sururban areas, the relationship is negative and moderate. For urban areas, the relationship is weakly negative. When we condition the data on urbanization, we see that the trend has changed significantly, indicating a confounding/lurking variable.
+
+Because the direction of the relationship changed when conditioned by urbanization, this is an example of Simpson's paradox. The urbanization variable acts as a 
+confounding (or lurking if not studied) variable, with respect to the crime ~ education relationship.
+
+```{r}
+#Urban Equation
+
+#crime_rate(hat). = -50.857 + 1.486(education(hat))
+```
+
+
+For every one unit increase in education, we predict a ~1.486 unit increase in crime rate, on average.
+
+I am unsure whether or not there are influential observations within each urbanization level. Influential observations have high leverage, meaning their values fall on the extreme, away from the averages of the rest of the data. One key characteristic about influential observations is that when removed, the fitted model and key metrics would shift. I am unsure on how to use R to remove outliers within sub-Urbanization groups.
+```{r}
+
+fl_crime[fl_crime == ""] <- NA
+lm_urban <- lm(crime_rate ~ education, data = fl_crime[fl_crime$urb_group == "Urban", ])
+lm_urban
+summary(lm_urban)
+
+
+
+
+```
+
+
+
+3.91
+In this study, there was no data provided about the gender of the respondents. Additionally, part b of the question implies gender was a variable 
+that was not measured in the study. Because of this, if there was a lot of men in the survey group, that could explain the illusion of a positive
+relationship between the two variables. Men are naturally taller than women, which could contribute to this observed correlation. Additionally, 
+you could argue that socio-economic factors, like a wage gap between genders, could have also contributed to the outcome of this survery.
+3.91b) If gender was included as a measured variable in this study, I would say gender would become a confounding variable. According to websearches, l
+urking variables tend to be overlooked and unobserved in the study. Because it would be included in the study, it would be a confounding variable.
+
+
+3.92)
+The strong negative correlation between tv ownership and birthrate does not necessarily mmean that higher tv ownership causes a lower birthrate.
+Because correlation does not equal causation, it is likely that there are a number of different factors affecting this relationship. 
+If a country has a high number of TV ownership, it is likely the country is more developed and technologically advanced.
+Women in these countries often have higher access to education, family planning, and healthcare. On the other hand, less developed countries may have lower tv ownership.
+These less developed countries,probably with no relationship to their TV ownership, may also prioritize women's education less than other countries, causing women to 
+work domestically and have more kids. In conclusion, it is very hard to say why there is a negative correlation bewtween birth rate and per capita television ownership. 
+Lurking variables could include healthcare, urbanization, family values, country religion, and country development.
+
+
+
+SUMMARY
+
+In this lesson, I learned the how impactful an outlier can be. When examining the broadband data with and without China being included as a point,
+it was clear that even one skewed datapoint could "misrepresent" the entire data. Although we could call both 0.77 and 0.98 a "strong positive relationship",
+removing China as an entry allowed us to see just how impactful the outlier was. I would not have expected the outlier to change the correlation by 0.21 points 
+
+
+
+
+```{r}
+fl_crime <- read.csv("~/Desktop/fl_crime.csv")
+View(fl_crime)
+airbnb_data <- read.csv("~/Desktop/listings.csv")
+boroughs <- unique(airbnb_data$neighbourhood_group)
+mean_prices <- vector(mode = 'numeric', length=length(boroughs)) 
+
+for(x in 1:length(boroughs)){
+  
+  mean_prices[x] <- mean(airbnb_data$price[airbnb_data$neighbourhood_group == boroughs[x]])
+
+}                     
+result <- data.frame(boroughs, mean_price = mean_prices)
+print(result)
+
+
+for (group in groups) {
+  subset_group <- fl_crime[urban_groups == group, ]
+  plot(subset_group$education, subset_data$crime_rate)
+  abline(lm(crime_rate$education, data = subset_group))
+  correlation <- cor(subset_group$education, subset_group$crime_rate)
+  cat(group, correlation)
+}
+
+
+```
+
+
+
+
+```{r}
+airbnb_data <- read.csv("~/Desktop/listings.csv")
+
+airbnb_data[airbnb_data == ""] <- NA
+aggregate(airbnb_data$price, list(airbnb_data$neighbourhood_group),FUN=mean)
+```
+
+
+
+```{r}
+x <- c(7, 24, 9, 42, 12, 88, 91, 131, 47, 71)
+sorted_x=x[order(x)]
+sorted_x
+
+
+
+my.median <- function(x) {
+  sorted_x <- sort(x)
+  n <- length(sorted_x)
+  if (n %% 2 == 0) {
+    mid <- n / 2
+    mid_2 <- (mid + 1)
+    median <- (sorted_x[mid] + sorted_x[mid_2]) / 2
+    return (median)
+  } else { 
+    median <- (ceiling(n/2))
+    return(median)}}
+
+my.median(x)
+ 
+
+```
+
+
+```{r}
+fl_crime <- read.csv("~/Desktop/fl_crime.csv")
+
+str(fl_crime)
+crime_rate <- fl_crime$crime.rate..per.1000.
+education <- fl_crime$education....
+
+plot(education,crime_rate)
+```
+2.1) When you plot crime against education, there appears to be a positive relationship, although it is weak. The points on the plot are scattered further apart, 
+but follow a general trend of y increasing as the other variable increases. I think this graph can loosely be described by a straight line.
+
+```{r}
+correlation <- cor(education,crime_rate)
+correlation
+```
+2.2) Using the correlation function, I calculated a correlation of 0.467. This number being greater than zero indicates a positive relationship, which can be confirmed 
+from our plot. The value being in the 0.4 range indicates a moderate relationship between the two variables.If the correlation fell closer to positive 1, the points in 
+the plot would not be so scattered, and fall closer to the line, indicating a stronger relationship. 
+
+
+
+2.3)
+```{r}
+
+fl_crime <- read.csv("~/Desktop/fl_crime.csv")
+crime_rate <- fl_crime$crime.rate..per.1000.
+education <- fl_crime$education....
+
+plot(education,crime_rate)
+abline(lm(education ~ crime_rate), col = "blue")
+
+summary(lm(education ~ crime_rate))
+
+```
+2.3) 
+a) When I used the lm() function, I got an intercept of 61.8, and a crime_rate value of 0.147.This means the equation would look like: hat(y) = 61.8 + (0.147)x OR 
+(hat)crime_rate = 61.8 + (0.147)(education%)
+
+
+b) This means that according to the model, when education is valued at 0, the crime rate falls around 61.8. I think that in case, the intercept is not the most 
+insightful metric, because the idea of an area having a 0% rate of education is very unlikely. (I looked up info on the data to see the column in question was measured in "education %"). 
+
+c) The slope is 0.147. This means that for every 1 unit increase in education (in this case, percent), the crime rate is expected to increase by 0.147 units.
+
+
+
+3.3
+a) The response/outcome variable is the reported happiness level, which is dependent on the explanatory variable, family income.
+b) Above Avg Income:
+  Not too happy: 21/360= 0.058
+  Pretty happy: 213/360= 0.591
+  Very happy: 126/360= 0.35
+Average Income:
+  Not too happy: 96/850=0.11
+  Pretty happy: 506/850= 0.59
+  Very happy: 248/850=0.29
+Below Average
+  Not too happy: 143/604=0.237
+  Pretty happy: 347/604=0.574
+  Very happy: 114/604=0.189
+Looking at the association between these variables, it appears that the higher the average income, the less likely the respondent is to answer "Not too happy". The income group of below average reflects this observation, with a higher "not too happy" of 23.7%, compared to the 11% and 5.8% in the two other groups. Additionally, the proportions of people responding "pretty happy" appears to be roughly consistent across income types.
+c) Overall, 26.9% of people reported being "very happy"
+
+
+
+c) 488/1814 = .269. 26.9% of people surveyed reported being very happy.
+
+3.14
+a) I would call this association weak, because the correlation between x and y is -.07, which is relatively very close to 0. This number represents the strength of the relationship between two variables, with numbers closer to -1/1 representing a strong relationship. This means there is not a strong relationship between the students political ideology, and number of times a week reading a newspaper.
+b) The explanatory variable of religiosity has a stronger association with political ideology. .58 is much closer to 1 than -.07 is, indicating a stronger relationship with points falling closer to the line of best fit. This association being stronger than number of times a week reading a newspaper makes sense, because how often you attend religious services is more likely to impact your political ideology, than reading the newspaper.
+
+3.16)
+ 1. c
+ 2. a
+ 3. d
+ 4. b
+ 
+3.26
+a) For a house with 2,000 square feet, we predict it will sell for 163,200 dollars. For a house with 3,000 square feet, we predict it will sell for 240,200 dollars.
+b) A slope of 77 when interpreting the x and y variables, means that for every one thousand dollar increase in x, square footage, we expect a 77,000 dollar increase in the selling price of the house.
+c) The correlation between these variables is positive because as the square footage of a house increases, so does it's expected selling price. It does not make sense for homes to get cheaper the larger they get.
+d) The residual is the actual selling price minus the expected selling price.
+300,000 - 240,200 = 59,800 as the residual. This means that the house sold for almost 60,000 dollars more than the expected amount. This may mean the model may have to be reevaluated, or that this house had outside factors that the model could not account for, which resulted in a higher selling price.
+
+3.61
+a) Explanatory: Sq ft in a house Response: Assessed value
+b) Explanatory: gender Response: Political party preference
+c) Explanatory: Number of years of education Response: Annual income
+d) Explanatory: Type of diet Response: Number of pounds lost on a diet
+
+3.63
+a) If male and yes --> 0.768
+If male and no --> 0.231
+If female and yes --> 0.852
+If female and no --> 0.148
+b) There is a slight difference between the responses of males and females, but it is hard to make a general judgement of their beliefs. Of the survey respondents,
+it appears a little more women have an opinion (Yes response) about life after death, as compared to men. 85% of women responded yes, while only 76% of men responded yes.
+This means that 9% more women have an opinion of life after death compared to men. On the other hand, 23% of men responded that they don't have an opinion on the afterlife,
+while only 14.8% of women responded that way. This means that ~8% more men do not have an opinion on the afterlife compared to women.
+
+3.70
+a) i --> b
+ii --> c
+iii ---> a
+b) The relationship between rainfall (in African regions) and dust (in the Caribbean and Atlantic) is negative. It appears that as the African regions get more rainfall,
+less dust is carried west to the Caribbean and Atlantic.
+
+3.83
+a) If you convert -20,000 dollars to euros at a rate of $1.25 per euro, the new intercept of the regression equation becomes -16,000 euros.
+b) The new slope of the regression equation becomes 3200.
+c) The correlation will remain the same, whether the regression equation is in annual income measured by dollars or measured by euros, because it is not affected by scaling. 
+The conversion of units remained consistent, which would result in the same correlation.
+
+
+
+Summary
+
+For me, this homework illustrated the concepts of conditional proportions and the strength of association for two variables. Exercise 3.3.b helped me see how conditional 
+proportions allows us to analyze the different responses, happiness level, across values of another variable, income.This also made it important for me to make sure I had 
+a clear understanding of the data before going to do calculations, or writing any code, because I realized how easy it could be to misread the data I was looking at, given 
+that it is not just the one variable anymore. Interpreting the strengths of association in the homework helped me understand what the numbers I was calculating corresponded to. 
+I realized it helps to take the equation/numbers I am looking at, and piece by piece turn it into an actual sentence to better understand what these values mean in terms of the data.
+I also got to demonstrate understanding how to read a scatter plot, and assess the strength of association. Plotting the data in R, and seeing how far the data fell apart from each other 
+helped me get an idea of the strength of association without performing any calculations yet.
+(points? units?). Additionally, when asked if we should exclude China, it really put into perspective for me the real world applications of data analysis. 
+In a perfect world, we could exclude all outliers. However, I realized just because China was an outlier, did not mean it was wrong, it was still real data with 
+real world implications. I am also getting a better understanding of identifying which metrics/measures of analysis to use depending on the type (categorical, 
+quantitative, etc) of the rest of the data.
