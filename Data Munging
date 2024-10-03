@@ -1,0 +1,45 @@
+
+
+#Loading in the dataset
+d.set <- read.delim("~/Desktop/Standardization_example.txt")
+View(d.set)
+d.set[d.set == ""] <- NA
+dim(d.set)
+
+# View the data
+View(d.set)
+summary(d.set)
+
+
+#Assigning the length of the data frame to variable n_col
+n_col = dim(d.set)[2]
+
+
+# Creating empty vectors to begin the process of sorting out missing values
+null_removed <- vector(mode = "numeric")
+num_Col   <- vector(mode = "numeric")
+
+
+#Iterating columns throughout the length of the data frame assigned to n_col
+for (col in 1:n_col)
+{
+  ExtractedColumn = d.set[, col]
+  
+  #Removing NA entries from the vector and counting the length of the remaining
+  null_removed[col] <- length(ExtractedColumn[!is.na(ExtractedColumn)])
+  
+  #Counting the total length of the column to get the total number of entries
+  num_Col[col] <- length(ExtractedColumn)
+  
+}
+
+
+#Using for loop to write the print statements
+for (col in 1:n_col)
+{
+  print(sprintf(
+    "Column %d is %.2f percent complete",   #Formatting print statement 
+    col,
+    null_removed[col] / num_Col[col] * 100. #Multiplying by 100 to get a percent
+  ))
+}
